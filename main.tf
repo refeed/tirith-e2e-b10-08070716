@@ -3,3 +3,5 @@ resource "aws_instance" "app" {
 }
 
 resource "aws_s3_bucket" "logs" { bucket = "audit-logs" }
+
+resource "aws_s3_bucket" "reports" { bucket = "quarterly-reports" }
