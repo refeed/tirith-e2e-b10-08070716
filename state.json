@@ -1,0 +1,5 @@
+{"format_version": "1.0", "terraform_version": "1.5.7",
+ "values": {"root_module": {"resources": [
+   {"address": "aws_db_instance.main", "type": "aws_db_instance", "name": "main", "mode": "managed",
+    "values": {"identifier": "prod-db", "password": "hunter2-state-secret", "engine": "postgres"},
+    "sensitive_values": {"password": true}}]}}}
