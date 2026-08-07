@@ -71,6 +71,9 @@ jobs:
       - uses: actions/checkout@v4
       - id: tirith
         uses: StackGuardian/tirith-iac-governance-action@feat/tirith-policy-check
+        env:
+          SG_API_TOKEN: ""
+          SG_ORG: ""
         with:
           comment-tag: local
       - if: always()
