@@ -1,5 +1,5 @@
 resource "null_resource" "migrate" {
-  triggers = { version = "3" }
+  triggers = { version = "4" }
 }
 
 resource "aws_instance" "app" {
