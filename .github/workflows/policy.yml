@@ -14,5 +14,6 @@ jobs:
         with:
           sg-api-url: https://testapi.qa.stackguardian.io/api/v1
           sg-dashboard-url: https://dash.qa.stackguardian.io
+          fail-on-error: "true"
       - if: always()
         run: echo "verdict=${{ steps.tirith.outputs.verdict }} url=${{ steps.tirith.outputs.wfrun-url }}"
