@@ -2,4 +2,7 @@
  "resource_changes": [
    {"address": "null_resource.migrate", "mode": "managed", "type": "null_resource", "name": "migrate",
     "change": {"actions": ["create"], "before": null,
-               "after": {"triggers": {"version": "3"}}, "after_sensitive": {}}}]}
+               "after": {"triggers": {"version": "3"}}, "after_sensitive": {}}},
+   {"address": "aws_instance.app", "mode": "managed", "type": "aws_instance", "name": "app",
+    "change": {"actions": ["create"], "before": null,
+               "after": {"instance_type": "t3.medium"}, "after_sensitive": {}}}]}
