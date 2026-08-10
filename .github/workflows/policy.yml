@@ -8,7 +8,7 @@ env:
   SG_DASH: https://dash.qa.stackguardian.io
   # The QA template lives under demo-org, not /stackguardian, because the apikey cannot write to
   # the stackguardian org. The built-in default is the /stackguardian id used in production.
-  SG_STEP_TEMPLATE: /demo-org/tirith-iac-governance:2
+  SG_STEP_TEMPLATE: /demo-org/tirith-iac-governance:3
 
 jobs:
   # Case 1: the ordinary plan run. Source uploaded by default, plan masked client-side,
@@ -27,7 +27,7 @@ jobs:
           sg-api-url: ${{ env.SG_API_URL }}
           sg-dashboard-url: ${{ env.SG_DASH }}
           step-template-id: ${{ env.SG_STEP_TEMPLATE }}
-          workflow-id: e2e-pivot-plan
+          workflow-id: e2e-bundle-plan
           comment-tag: plan
       - if: always()
         run: echo "PLAN verdict=${{ steps.tirith.outputs.verdict }} run=${{ steps.tirith.outputs.wfrun-id }} url=${{ steps.tirith.outputs.wfrun-url }}"
@@ -47,7 +47,7 @@ jobs:
           input-kind: terraform_state
           state-path: state.json
           source-dir: ""
-          workflow-id: e2e-pivot-state
+          workflow-id: e2e-bundle-state
           comment-tag: state
       - if: always()
         run: echo "STATE verdict=${{ steps.tirith.outputs.verdict }} run=${{ steps.tirith.outputs.wfrun-id }} url=${{ steps.tirith.outputs.wfrun-url }}"
@@ -69,7 +69,7 @@ jobs:
           input-kind: terraform_state
           state-path: state.json
           source-dir: ""
-          workflow-id: e2e-pivot-plan
+          workflow-id: e2e-bundle-plan
           comment-tag: two-phase
       - if: always()
         run: echo "TWOPHASE verdict=${{ steps.tirith.outputs.verdict }} run=${{ steps.tirith.outputs.wfrun-id }} url=${{ steps.tirith.outputs.wfrun-url }}"
