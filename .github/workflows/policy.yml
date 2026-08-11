@@ -4,15 +4,87 @@ permissions: { contents: read, pull-requests: write, checks: write }
 env:
   SG_API_TOKEN: ${{ secrets.SG_API_TOKEN }}
   SG_ORG: ${{ vars.SG_ORG }}
+  SG_API_URL: https://testapi.qa.stackguardian.io/api/v1
+  SG_DASH: https://dash.qa.stackguardian.io
+  # The QA template lives under demo-org, not /stackguardian, because the apikey cannot write to
+  # the stackguardian org. The built-in default is the /stackguardian id used in production.
+  SG_STEP_TEMPLATE: /demo-org/tirith-iac-governance:1
+
 jobs:
-  tirith:
+  # Case 1: the ordinary plan run. Source uploaded by default, plan masked client-side,
+  # infracost generated, checkov + the approval policy evaluated, sticky comment written.
+  #
+  # This is also the failing-policy case: the plan trips no-huge-instances, so the verdict is
+  # `failed` while the *run* must still reach COMPLETED. That is the exit-12 contract -- a policy
+  # violation is data, not a step failure.
+  plan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - id: tirith
         uses: StackGuardian/tirith-iac-governance-action@feat/tirith-policy-check
         with:
-          sg-api-url: https://testapi.qa.stackguardian.io/api/v1
-          sg-dashboard-url: https://dash.qa.stackguardian.io
+          sg-api-url: ${{ env.SG_API_URL }}
+          sg-dashboard-url: ${{ env.SG_DASH }}
+          step-template-id: ${{ env.SG_STEP_TEMPLATE }}
+          workflow-id: e2e-rev1-plan
+          comment-tag: plan
       - if: always()
-        run: echo "verdict=${{ steps.tirith.outputs.verdict }} url=${{ steps.tirith.outputs.wfrun-url }}"
+        run: echo "PLAN verdict=${{ steps.tirith.outputs.verdict }} run=${{ steps.tirith.outputs.wfrun-id }} url=${{ steps.tirith.outputs.wfrun-url }}"
+
+  # Case 2: a state document. Routing is purely "no plan.json, so tfstate.json goes to the json
+  # provider" -- there is no stored input kind to disagree with.
+  state:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: tirith
+        uses: StackGuardian/tirith-iac-governance-action@feat/tirith-policy-check
+        with:
+          sg-api-url: ${{ env.SG_API_URL }}
+          sg-dashboard-url: ${{ env.SG_DASH }}
+          step-template-id: ${{ env.SG_STEP_TEMPLATE }}
+          input-kind: terraform_state
+          state-path: state.json
+          source-dir: ""
+          workflow-id: e2e-rev1-state
+          comment-tag: state
+      - if: always()
+        run: echo "STATE verdict=${{ steps.tirith.outputs.verdict }} run=${{ steps.tirith.outputs.wfrun-id }} url=${{ steps.tirith.outputs.wfrun-url }}"
+
+  # Case 3: the two-phase pipeline. Same workflow-id as the plan job, so the workflow already
+  # exists -- which is exactly the shape where `ensure_workflow` returns 409 and updates nothing.
+  # A state document must still route correctly against a workflow created for a plan.
+  two-phase:
+    needs: plan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: tirith
+        uses: StackGuardian/tirith-iac-governance-action@feat/tirith-policy-check
+        with:
+          sg-api-url: ${{ env.SG_API_URL }}
+          sg-dashboard-url: ${{ env.SG_DASH }}
+          step-template-id: ${{ env.SG_STEP_TEMPLATE }}
+          input-kind: terraform_state
+          state-path: state.json
+          source-dir: ""
+          workflow-id: e2e-rev1-plan
+          comment-tag: two-phase
+      - if: always()
+        run: echo "TWOPHASE verdict=${{ steps.tirith.outputs.verdict }} run=${{ steps.tirith.outputs.wfrun-id }} url=${{ steps.tirith.outputs.wfrun-url }}"
+
+  # Case 4: no credentials at all -- policies come from the repository, nothing leaves the runner.
+  local:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: tirith
+        uses: StackGuardian/tirith-iac-governance-action@feat/tirith-policy-check
+        env:
+          SG_API_TOKEN: ""
+          SG_ORG: ""
+        with:
+          comment-tag: local
+      - if: always()
+        run: echo "LOCAL verdict=${{ steps.tirith.outputs.verdict }} mode=${{ steps.tirith.outputs.mode }}"
